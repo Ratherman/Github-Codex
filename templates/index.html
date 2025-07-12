@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>開盤價查詢</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #chat-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            border: 1px solid #ccc;
+            background: #fff;
+            display: none;
+            flex-direction: column;
+        }
+        #chat-header {
+            background: #eee;
+            padding: 5px;
+            cursor: pointer;
+        }
+        #chat-messages {
+            padding: 5px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        #chat-input {
+            display: flex;
+        }
+        #chat-input input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>查詢開盤價</h1>
+    <form method="post">
+        股票代碼: <input type="text" name="symbol" value="{{ symbol }}" required>
+        開始日期: <input type="date" name="start" value="{{ start }}" required>
+        結束日期: <input type="date" name="end" value="{{ end }}" required>
+        <button type="submit">查詢</button>
+    </form>
+    {% if data %}
+    <canvas id="chart" width="600" height="400"></canvas>
+    <script>
+        const data = {{ data|tojson }};
+        const labels = data.map(d => d.Date);
+        const opens = data.map(d => d.Open);
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Open',
+                    data: opens,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { display: true },
+                    y: { display: true }
+                },
+                interaction: { mode: 'index', intersect: false }
+            }
+        });
+    </script>
+    {% endif %}
+
+    <div id="chat-box">
+        <div id="chat-header">對話</div>
+        <div id="chat-messages"></div>
+        <div id="chat-input">
+            <input type="text" id="chat-text" placeholder="輸入訊息">
+            <button id="send-btn">送出</button>
+        </div>
+    </div>
+    <script>
+        const header = document.getElementById('chat-header');
+        const box = document.getElementById('chat-box');
+        const messages = document.getElementById('chat-messages');
+        const sendBtn = document.getElementById('send-btn');
+        const text = document.getElementById('chat-text');
+
+        header.addEventListener('click', () => {
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        function appendMsg(content, cls) {
+            const div = document.createElement('div');
+            div.textContent = content;
+            div.className = cls;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', async () => {
+            const msg = text.value.trim();
+            if (!msg) return;
+            appendMsg('我: ' + msg, 'user');
+            text.value = '';
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                appendMsg('助理: ' + data.reply, 'bot');
+            } else {
+                appendMsg('Error', 'bot');
+            }
+        });
+    </script>
+</body>
+</html>
