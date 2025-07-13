@@ -31,3 +31,6 @@ Github-Codex is a small Flask web application that retrieves stock opening price
    python app.py
    ```
 4. Open your browser at `http://localhost:5000`.
+
+## Python 基礎教學
+此倉庫的 `Python-basics` 資料夾提供四個入門教學 Notebook。前往該資料夾的 `README` 即可看到各 Notebook 的 `Open in Colab` 按鈕，點擊後可直接在雲端練習。
